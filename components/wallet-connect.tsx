@@ -114,4 +114,3 @@ export function WalletConnect({ children, className }: WalletConnectProps) {
     </Button>
   )
 }
-

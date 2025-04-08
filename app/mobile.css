@@ -1,0 +1,111 @@
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  /* Improve touch targets */
+  button,
+  a {
+    min-height: 44px;
+  }
+
+  /* Adjust font sizes for better readability */
+  html {
+    font-size: 15px;
+  }
+
+  /* Improve scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix input zoom issues */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Prevent content from being hidden under fixed headers */
+  .fixed-header-padding {
+    padding-top: 60px;
+  }
+
+  /* Enhance tap highlight for better feedback */
+  a,
+  button {
+    -webkit-tap-highlight-color: rgba(180, 5, 244, 0.1);
+  }
+
+  /* Improve mobile card layouts */
+  .card-mobile {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+  }
+
+  /* Adjust spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Improve mobile navigation */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+    border-top: 1px solid rgba(180, 5, 244, 0.2);
+  }
+
+  /* Improve coin grid layout on mobile */
+  .grid-cols-1 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Make coin cards more compact on mobile */
+  .coin-card {
+    padding: 0.75rem;
+  }
+
+  /* Adjust font sizes for coin cards on mobile */
+  .coin-card h3 {
+    font-size: 1rem;
+  }
+
+  .coin-card p {
+    font-size: 0.875rem;
+  }
+}
+
+/* Webview-specific adjustments */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  /* Remove browser UI elements in PWA mode */
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* Prevent pull-to-refresh */
+  html,
+  body {
+    overflow: hidden;
+    height: 100%;
+  }
+
+  #app-root {
+    overflow: auto;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Status bar height adjustment for iOS */
+  .ios-status-bar-padding {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Bottom navigation padding for iOS */
+  .ios-bottom-padding {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

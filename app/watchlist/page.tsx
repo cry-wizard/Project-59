@@ -115,7 +115,8 @@ export default function Watchlist() {
     }
   }, [retryCount, watchlist])
 
-  // Update the fetchWatchlistCoins function to ensure data is always available
+  // Update the fetchWatchlistCoins function to better handle API responses
+
   const fetchWatchlistCoins = async (coinIds: string[]) => {
     if (coinIds.length === 0) {
       setWatchlistCoins([])
@@ -125,17 +126,10 @@ export default function Watchlist() {
 
     try {
       setLoading(true)
+      setUsingFallbackData(false)
 
-      // Always set fallback data first to ensure we have something to display
-      const fallbackWatchlistCoins = coinIds.map((id) => fallbackCoins[id]).filter((coin) => coin !== undefined)
-
-      if (fallbackWatchlistCoins.length > 0) {
-        setWatchlistCoins(fallbackWatchlistCoins)
-        setUsingFallbackData(true)
-      }
-
-      // Try to fetch from API in the background
       try {
+        // Try to fetch from API
         const idsParam = coinIds.join(",")
         const response = await fetch(
           `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${idsParam}&order=market_cap_desc&per_page=100&page=1&sparkline=false`,
@@ -149,12 +143,32 @@ export default function Watchlist() {
 
         if (response.ok) {
           const data = await response.json()
-          setWatchlistCoins(data)
+
+          // Ensure we have valid image URLs
+          const processedData = data.map((coin: any) => ({
+            ...coin,
+            image: coin.image || "/coin-images/placeholder.png",
+          }))
+
+          setWatchlistCoins(processedData)
           setUsingFallbackData(false)
+          return
         }
+
+        throw new Error(`API error: ${response.status}`)
       } catch (error) {
         console.error("Error fetching watchlist coins:", error)
-        // We already have fallback data, so just show a toast
+
+        // Use fallback data on error
+        const fallbackWatchlistCoins = coinIds
+          .map((id) => fallbackCoins[id])
+          .filter((coin): coin is Coin => coin !== undefined)
+
+        if (fallbackWatchlistCoins.length > 0) {
+          setWatchlistCoins(fallbackWatchlistCoins)
+          setUsingFallbackData(true)
+        }
+
         toast({
           title: "Using cached data",
           description: "We're using cached data due to API limitations. Some information may not be up-to-date.",
@@ -243,7 +257,17 @@ export default function Watchlist() {
                 <Link href={`/coin/${coin.id}`} className="block">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="relative h-12 w-12">
-                      <Image src={coin.image || "/placeholder.svg"} alt={coin.name} fill className="rounded-full" />
+                      <Image
+                        src={coin.image || "/coin-images/placeholder.png"}
+                        alt={coin.name || "Cryptocurrency"}
+                        fill
+                        className="rounded-full"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          const target = e.target as HTMLImageElement
+                          target.src = "/coin-images/placeholder.png"
+                        }}
+                      />
                     </div>
                     <div>
                       <h3 className="font-bold">{coin.name}</h3>
@@ -286,4 +310,3 @@ export default function Watchlist() {
     </div>
   )
 }
-

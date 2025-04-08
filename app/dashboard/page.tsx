@@ -74,34 +74,53 @@ export default function Dashboard() {
     try {
       console.log("Loading coins for page:", pageNum)
 
-      // Always set fallback data first to ensure we have something to display
-      setCoins(fallbackCoins)
-      setFilteredCoins(fallbackCoins)
-      setUsingFallbackData(true)
+      // Fetch coins with built-in fallback to mock data
+      const result = await fetchCoins(pageNum, coinsPerPage)
 
-      try {
-        const result = await fetchCoins(pageNum, coinsPerPage)
+      if (result.coins.length > 0) {
+        setCoins(result.coins)
+        setFilteredCoins(result.coins)
+        setHasMore(result.hasMore)
+        setPage(pageNum)
 
-        if (result.coins.length > 0) {
-          setCoins(result.coins)
-          setFilteredCoins(result.coins)
-          setHasMore(result.hasMore)
-          setPage(pageNum)
-          setUsingFallbackData(false)
+        // Check if we're using mock data
+        const isMockData = result.coins.some(
+          (coin) => coin.id.includes("fallback") || !coin.image || coin.image.includes("placeholder"),
+        )
 
-          toast({
-            title: "Coins loaded",
-            description: `Showing page ${pageNum} of cryptocurrency data`,
-          })
-        }
-      } catch (error) {
-        console.error("Error fetching coins:", error)
+        setUsingFallbackData(isMockData)
+
+        toast({
+          title: isMockData ? "Using simulated data" : "Coins loaded",
+          description: isMockData
+            ? "We're using simulated cryptocurrency data due to API limitations."
+            : `Showing page ${pageNum} of cryptocurrency data`,
+          variant: "default",
+        })
+      } else {
+        // If no coins returned, use fallback data
+        setCoins(fallbackCoins)
+        setFilteredCoins(fallbackCoins)
+        setUsingFallbackData(true)
+
         toast({
           title: "Using fallback data",
           description: "We're using cached data due to API limitations.",
           variant: "default",
         })
       }
+    } catch (error) {
+      console.error("Error in loadCoins:", error)
+      // Use fallback data on error
+      setCoins(fallbackCoins)
+      setFilteredCoins(fallbackCoins)
+      setUsingFallbackData(true)
+
+      toast({
+        title: "Using fallback data",
+        description: "We're using cached data due to API limitations.",
+        variant: "default",
+      })
     } finally {
       setLoading(false)
     }
@@ -422,4 +441,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

@@ -121,4 +121,3 @@ export const SparklesCore = ({
 
   return <canvas ref={canvasRef} id={id} className={cn("absolute inset-0", className)} />
 }
-

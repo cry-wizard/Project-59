@@ -93,4 +93,3 @@ export async function searchCryptos(query: string): Promise<CryptoData[]> {
       crypto.name.toLowerCase().includes(lowercaseQuery) || crypto.symbol.toLowerCase().includes(lowercaseQuery),
   )
 }
-

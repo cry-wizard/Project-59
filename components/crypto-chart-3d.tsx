@@ -309,4 +309,3 @@ export function CryptoChart3D() {
     </div>
   )
 }
-

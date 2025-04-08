@@ -148,7 +148,7 @@ export function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="flex items-center gap-2 p-1 pl-2 pr-2">
                         <Avatar className="h-8 w-8 border-2 border-teal-500">
-                          <AvatarImage src={user.image || "/placeholder-user.jpg"} />
+                          <AvatarImage src={user.image || "/placeholder-user.jpg"} alt={user.name || "User"} />
                           <AvatarFallback className="bg-teal-500/20 text-teal-700">
                             {user.name?.charAt(0) || user.email?.charAt(0)}
                           </AvatarFallback>
@@ -241,7 +241,7 @@ export function Navbar() {
                     <div className="flex flex-col space-y-2">
                       <div className="flex items-center space-x-2 p-2 rounded-md bg-teal-500/10">
                         <Avatar className="h-10 w-10 border-2 border-teal-500">
-                          <AvatarImage src={user.image || "/placeholder-user.jpg"} />
+                          <AvatarImage src={user.image || "/placeholder-user.jpg"} alt={user.name || "User"} />
                           <AvatarFallback className="bg-teal-500/20 text-teal-700">
                             {user.name?.charAt(0) || user.email?.charAt(0)}
                           </AvatarFallback>
@@ -287,4 +287,3 @@ export function Navbar() {
     </header>
   )
 }
-

@@ -116,4 +116,3 @@ export function HeroParallax({ items }: { items: Item[] }) {
     </div>
   )
 }
-

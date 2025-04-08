@@ -79,7 +79,7 @@ export function TeamSection() {
               <div className="bg-card rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all">
                 <div className="relative w-32 h-32 mx-auto mb-4 overflow-hidden rounded-full">
                   <Image
-                    src={member.image || "/placeholder.svg"}
+                    src={member.image || "/placeholder.svg?height=100&width=100"}
                     alt={member.name}
                     fill
                     className="object-cover"
@@ -118,4 +118,3 @@ export function TeamSection() {
     </section>
   )
 }
-

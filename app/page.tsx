@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ArrowRight, BarChart2, Coins, Wallet, Zap, ChevronDown, Search } from "lucide-react"
+import { ArrowRight, BarChart2, Coins, Wallet, Zap, ChevronDown } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { TrackedCoin } from "@/components/tracked-coin"
 import { TestimonialsSection } from "@/components/testimonials-section"
@@ -13,9 +12,9 @@ import { useRef } from "react"
 import Image from "next/image"
 import { ThreeScene } from "@/components/three-scene"
 import { CryptoChart3D } from "@/components/crypto-chart-3d"
-
-// Import the ResponsiveContainer component
+import { EnhancedSearch } from "@/components/enhanced-search"
 import { ResponsiveContainer } from "@/components/responsive-container"
+import { useMobile } from "@/hooks/use-mobile"
 
 // Animated text gradient
 const GradientText = ({ children, className = "" }) => {
@@ -36,6 +35,7 @@ const FeaturedCoins = [
 
 export default function Home() {
   const targetRef = useRef<HTMLDivElement>(null)
+  const isMobile = useMobile()
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -64,7 +64,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-bold mb-4"
+              className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4"
             >
               <GradientText>Trade</GradientText>Xis
             </motion.h1>
@@ -73,7 +73,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-8"
+              className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto mb-8"
             >
               The next generation cryptocurrency trading platform
             </motion.p>
@@ -82,18 +82,18 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-wrap justify-center gap-4 mb-12 max-w-3xl"
+              className="flex flex-wrap justify-center gap-3 md:gap-4 mb-8 md:mb-12 max-w-3xl"
             >
               {FeaturedCoins.map((coin, index) => (
                 <Link href={`/coin/${coin.id}`} key={coin.id}>
-                  <div className="bg-black/30 backdrop-blur-md border border-teal-500/20 rounded-xl p-4 flex items-center gap-3 hover:bg-teal-500/10 transition-all">
-                    <div className="relative h-8 w-8">
+                  <div className="bg-black/30 backdrop-blur-md border border-teal-500/20 rounded-xl p-3 md:p-4 flex items-center gap-2 md:gap-3 hover:bg-teal-500/10 transition-all">
+                    <div className="relative h-6 w-6 md:h-8 md:w-8 bg-black/30 rounded-full">
                       <Image
                         src={`/coin-images/${coin.id}.png`}
                         alt={coin.name}
                         width={32}
                         height={32}
-                        className="rounded-full"
+                        className="rounded-full p-0.5"
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
                           const target = e.target as HTMLImageElement
@@ -102,7 +102,7 @@ export default function Home() {
                       />
                     </div>
                     <div className="text-left">
-                      <p className="font-medium text-white">{coin.symbol}</p>
+                      <p className="font-medium text-white text-sm md:text-base">{coin.symbol}</p>
                       <p className="text-xs text-gray-400">{coin.name}</p>
                     </div>
                   </div>
@@ -114,23 +114,26 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
-              className="flex flex-col sm:flex-row gap-4 mb-16"
+              className="flex flex-col sm:flex-row gap-4 mb-10 md:mb-16"
             >
               <Link href="/dashboard">
                 <Button
-                  size="lg"
-                  className="rounded-full px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                  size={isMobile ? "default" : "lg"}
+                  className="rounded-full px-6 md:px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 relative overflow-hidden group w-full sm:w-auto"
                 >
-                  Explore Markets <ArrowRight className="ml-2 h-4 w-4" />
+                  <span className="absolute top-0 left-0 w-full h-full bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+                  <span className="relative z-10">Get Started</span>
+                  <ArrowRight className="ml-2 h-4 w-4 relative z-10" />
                 </Button>
               </Link>
               <Link href="/auth/signup">
                 <Button
-                  size="lg"
+                  size={isMobile ? "default" : "lg"}
                   variant="outline"
-                  className="rounded-full px-8 border-teal-500/20 hover:bg-teal-500/10 hover:text-teal-500"
+                  className="rounded-full px-6 md:px-8 border-teal-500/20 hover:bg-teal-500/10 hover:text-teal-500 relative overflow-hidden group w-full sm:w-auto"
                 >
-                  Create Account
+                  <span className="absolute inset-0 w-0 bg-teal-500/10 transition-all duration-300 group-hover:w-full"></span>
+                  <span className="relative z-10">Create Account</span>
                 </Button>
               </Link>
             </motion.div>
@@ -139,37 +142,16 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.0 }}
-              className="max-w-md w-full mx-auto"
+              className="w-full max-w-md md:max-w-2xl mx-auto px-2"
             >
-              <form
-                className="relative"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const input = e.currentTarget.querySelector("input")
-                  if (input && input.value) {
-                    window.location.href = `/pika?q=${encodeURIComponent(input.value)}`
-                  }
-                }}
-              >
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search for crypto..."
-                  className="pl-10 pr-20 h-12 bg-black/30 backdrop-blur-md border-teal-500/20 focus-visible:ring-teal-500"
-                />
-                <Button
-                  type="submit"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-10 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
-                >
-                  Search
-                </Button>
-              </form>
+              <EnhancedSearch />
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 1.2 }}
-              className="mt-16"
+              className="mt-10 md:mt-16"
             >
               <Button
                 variant="ghost"
@@ -188,16 +170,16 @@ export default function Home() {
       </section>
 
       {/* 3D Chart Section - Replace the previous 3D model */}
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 container mx-auto px-4 relative z-10">
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col justify-center order-2 md:order-1">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 <GradientText>Visualize</GradientText> Your Investments
               </h2>
               <p className="text-gray-300 mb-6">
@@ -225,7 +207,7 @@ export default function Home() {
                 </li>
               </ul>
               <Link href="/dashboard">
-                <Button className="rounded-full px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600">
+                <Button className="rounded-full px-6 md:px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 w-full sm:w-auto">
                   Explore Now <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -237,7 +219,7 @@ export default function Home() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
-            className="h-[500px] relative rounded-xl overflow-hidden border border-teal-500/20"
+            className="h-[300px] md:h-[500px] relative rounded-xl overflow-hidden border border-teal-500/20 order-1 md:order-2"
           >
             <CryptoChart3D />
           </motion.div>
@@ -245,7 +227,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative py-24 overflow-hidden" ref={targetRef}>
+      <section id="features" className="relative py-16 md:py-24 overflow-hidden" ref={targetRef}>
         {/* Content remains the same */}
         <div className="absolute inset-0 bg-gradient-to-b from-black via-purple-950/10 to-black"></div>
         <div className="absolute inset-0">
@@ -261,12 +243,12 @@ export default function Home() {
 
         <div className="container mx-auto px-4 relative z-10">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-10 md:mb-16"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
               <GradientText>Powerful</GradientText> Crypto Trading Tools
             </h2>
             <p className="text-gray-300 max-w-2xl mx-auto">
@@ -276,11 +258,11 @@ export default function Home() {
           </motion.div>
 
           {/* Update the sections to use ResponsiveContainer for better responsiveness */}
-          <section className="w-full py-12 md:py-24 lg:py-32">
+          <section className="w-full py-8 md:py-12 lg:py-16">
             <ResponsiveContainer>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 <motion.div
-                  className="bg-black/30 backdrop-blur-md p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
+                  className="bg-black/30 backdrop-blur-md p-6 md:p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
@@ -301,7 +283,7 @@ export default function Home() {
                 </motion.div>
 
                 <motion.div
-                  className="bg-black/30 backdrop-blur-md p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
+                  className="bg-black/30 backdrop-blur-md p-6 md:p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.2 }}
@@ -321,7 +303,7 @@ export default function Home() {
                 </motion.div>
 
                 <motion.div
-                  className="bg-black/30 backdrop-blur-md p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
+                  className="bg-black/30 backdrop-blur-md p-6 md:p-8 rounded-xl border border-teal-500/20 hover:border-teal-500/40 transition-all"
                   initial={{ opacity: 0, x: 50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
@@ -346,12 +328,12 @@ export default function Home() {
       </section>
 
       {/* Live Coin Tracker Section */}
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black via-purple-950/10 to-black"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-4"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
@@ -370,18 +352,18 @@ export default function Home() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <TrackedCoin coinId="bitcoin" />
             <TrackedCoin coinId="ethereum" />
             <TrackedCoin coinId="solana" />
             <TrackedCoin coinId="cardano" />
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-8 md:mt-10 text-center">
             <Link href="/dashboard">
               <Button
-                size="lg"
-                className="rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                size={isMobile ? "default" : "lg"}
+                className="rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 w-full sm:w-auto"
               >
                 View All Coins <Zap className="ml-2 h-4 w-4" />
               </Button>
@@ -397,11 +379,11 @@ export default function Home() {
       <TestimonialsSection />
 
       {/* CTA Section */}
-      <section className="relative py-24 overflow-hidden">
+      <section className="relative py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-black via-purple-950/10 to-black"></div>
         <div className="container mx-auto px-4 relative z-10 text-center">
           <motion.h2
-            className="text-4xl md:text-5xl font-bold mb-6"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 md:mb-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -410,7 +392,7 @@ export default function Home() {
             Ready to Start <GradientText>Trading</GradientText>?
           </motion.h2>
           <motion.p
-            className="text-xl text-gray-300 max-w-2xl mx-auto mb-8"
+            className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-6 md:mb-8"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -427,17 +409,19 @@ export default function Home() {
           >
             <Link href="/auth/signup">
               <Button
-                size="lg"
-                className="rounded-full px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                size={isMobile ? "default" : "lg"}
+                className="rounded-full px-6 md:px-8 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 relative overflow-hidden group w-full sm:w-auto"
               >
-                Sign Up Now
+                <span className="absolute top-0 left-0 w-full h-full bg-white/10 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+                <span className="relative z-10">Get Started</span>
+                <ArrowRight className="ml-2 h-4 w-4 relative z-10" />
               </Button>
             </Link>
             <Link href="/dashboard">
               <Button
-                size="lg"
+                size={isMobile ? "default" : "lg"}
                 variant="outline"
-                className="rounded-full px-8 border-teal-500/20 hover:bg-teal-500/10 hover:text-teal-500"
+                className="rounded-full px-6 md:px-8 border-teal-500/20 hover:bg-teal-500/10 hover:text-teal-500 w-full sm:w-auto"
               >
                 Explore Platform
               </Button>
@@ -450,7 +434,7 @@ export default function Home() {
       <footer className="relative border-t border-teal-500/20 py-12">
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-xl font-bold mb-4">TradeXis</h3>
               <p className="text-gray-400">Advanced cryptocurrency trading and analytics platform.</p>
@@ -549,16 +533,5 @@ export default function Home() {
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"
-                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.878 2.525c.636-.247 1.363-.416 2.427-.465C10.372 2.013 10.712 2 12.315 2z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </main>
-  )
-}
-
+                    d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.067-.06-1.407-.06-4.123v-.08c0-2.643.012-2.987.06-4.043.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.878 2.525c.636-.\
+\

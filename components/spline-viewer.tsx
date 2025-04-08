@@ -128,4 +128,3 @@ export function SplineViewer({ scene, className = "", style = {}, fallbackConten
     </div>
   )
 }
-

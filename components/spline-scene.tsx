@@ -74,4 +74,3 @@ export function SplineScene({ scene, className = "", fallbackContent }: SplineSc
     </div>
   )
 }
-

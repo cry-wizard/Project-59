@@ -124,4 +124,3 @@ export function SimpleSpline({ url, className = "" }: SimpleSplineProps) {
     </div>
   )
 }
-

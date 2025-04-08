@@ -23,4 +23,3 @@ export function ResponsiveContainer({ children, className, delay = 0 }: Responsi
     </motion.div>
   )
 }
-

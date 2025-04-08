@@ -256,4 +256,3 @@ export function ThreeScene({ className = "", style = {}, type = "crypto", color 
     </div>
   )
 }
-

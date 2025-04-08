@@ -1,4 +1,6 @@
 import { apiCache } from "./api-cache"
+import { imageCacheService } from "./image-cache"
+import { fetchMockCoins, fetchMockCoinDetails } from "./mock-coin-service"
 
 export interface Coin {
   id: string
@@ -11,192 +13,246 @@ export interface Coin {
   total_volume: number
 }
 
-// Expanded fallback data for when API fails
-const fallbackCoins: Record<string, Coin> = {
-  bitcoin: {
-    id: "bitcoin",
-    name: "Bitcoin",
-    symbol: "BTC",
-    image: "/coin-images/bitcoin.png",
-    current_price: 60000 + Math.random() * 2000,
-    price_change_percentage_24h: 2.5 + (Math.random() * 2 - 1),
-    market_cap: 1200000000000,
-    total_volume: 30000000000,
-  },
-  ethereum: {
-    id: "ethereum",
-    name: "Ethereum",
-    symbol: "ETH",
-    image: "/coin-images/ethereum.png",
-    current_price: 4000 + Math.random() * 200,
-    price_change_percentage_24h: -1.0 + (Math.random() * 2 - 1),
-    market_cap: 480000000000,
-    total_volume: 15000000000,
-  },
-  tether: {
-    id: "tether",
-    name: "Tether",
-    symbol: "USDT",
-    image: "/coin-images/placeholder.png",
-    current_price: 1.0 + Math.random() * 0.01,
-    price_change_percentage_24h: 0.1 + (Math.random() * 0.2 - 0.1),
-    market_cap: 83000000000,
-    total_volume: 56000000000,
-  },
-  binancecoin: {
-    id: "binancecoin",
-    name: "Binance Coin",
-    symbol: "BNB",
-    image: "/coin-images/placeholder.png",
-    current_price: 600 + Math.random() * 20,
-    price_change_percentage_24h: 1.2 + (Math.random() * 2 - 1),
-    market_cap: 93000000000,
-    total_volume: 2000000000,
-  },
-  solana: {
-    id: "solana",
-    name: "Solana",
-    symbol: "SOL",
-    image: "/coin-images/placeholder.png",
-    current_price: 150 + Math.random() * 10,
-    price_change_percentage_24h: 3.5 + (Math.random() * 2 - 1),
-    market_cap: 65000000000,
-    total_volume: 3000000000,
-  },
-  cardano: {
-    id: "cardano",
-    name: "Cardano",
-    symbol: "ADA",
-    image: "/coin-images/placeholder.png",
-    current_price: 1.2 + Math.random() * 0.1,
-    price_change_percentage_24h: -0.8 + (Math.random() * 2 - 1),
-    market_cap: 42000000000,
-    total_volume: 1500000000,
-  },
-  xrp: {
-    id: "xrp",
-    name: "XRP",
-    symbol: "XRP",
-    image: "/coin-images/placeholder.png",
-    current_price: 0.6 + Math.random() * 0.05,
-    price_change_percentage_24h: 1.0 + (Math.random() * 2 - 1),
-    market_cap: 32000000000,
-    total_volume: 1200000000,
-  },
-  polkadot: {
-    id: "polkadot",
-    name: "Polkadot",
-    symbol: "DOT",
-    image: "/coin-images/placeholder.png",
-    current_price: 22 + Math.random() * 2,
-    price_change_percentage_24h: 2.2 + (Math.random() * 2 - 1),
-    market_cap: 25000000000,
-    total_volume: 900000000,
-  },
-  dogecoin: {
-    id: "dogecoin",
-    name: "Dogecoin",
-    symbol: "DOGE",
-    image: "/coin-images/placeholder.png",
-    current_price: 0.15 + Math.random() * 0.02,
-    price_change_percentage_24h: 4.0 + (Math.random() * 3 - 1.5),
-    market_cap: 20000000000,
-    total_volume: 1800000000,
-  },
-  avalanche: {
-    id: "avalanche-2",
-    name: "Avalanche",
-    symbol: "AVAX",
-    image: "/coin-images/placeholder.png",
-    current_price: 35 + Math.random() * 3,
-    price_change_percentage_24h: 1.8 + (Math.random() * 2 - 1),
-    market_cap: 12000000000,
-    total_volume: 700000000,
-  },
+// Configuration flag to control API behavior
+const CONFIG = {
+  // Set to true to always use mock data, false to attempt real API first
+  ALWAYS_USE_MOCK_DATA: true,
+  // Maximum number of retries for API calls
+  MAX_API_RETRIES: 2,
+  // API request timeout in milliseconds
+  API_TIMEOUT: 5000,
 }
 
-// Extend with more coins
-for (let i = 1; i <= 30; i++) {
-  const id = `coin-${i}`
-  fallbackCoins[id] = {
-    id,
-    name: `Coin ${i}`,
-    symbol: `C${i}`,
-    image: `/coin-images/placeholder.png`,
-    current_price: Math.random() * 1000,
-    price_change_percentage_24h: Math.random() * 10 * (Math.random() > 0.5 ? 1 : -1),
-    market_cap: Math.random() * 10000000000,
-    total_volume: Math.random() * 1000000000,
+// Process coin data and handle image caching
+const processCoinData = (coin: any): Coin => {
+  // Check if we already have a cached image for this coin
+  let imageUrl = imageCacheService.getImage(coin.id)
+
+  // If no cached image, use the one from the API response
+  if (!imageUrl && coin.image) {
+    imageUrl = coin.image
+    // Store the image URL in our cache
+    imageCacheService.setImage(coin.id, imageUrl)
   }
-}
 
-// Helper function to simulate API delay
-const simulateApiDelay = () => new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 1200))
-
-// Function to get fallback coins for pagination
-const getFallbackCoins = (page = 1, perPage = 10) => {
-  const allFallbackCoins = Object.values(fallbackCoins)
-  const start = (page - 1) * perPage
-  const end = start + perPage
-  const paginatedCoins = allFallbackCoins.slice(start, end)
+  // If still no image, use placeholder
+  if (!imageUrl) {
+    imageUrl = "/coin-images/placeholder.png"
+  }
 
   return {
-    coins: paginatedCoins,
-    hasMore: end < allFallbackCoins.length,
+    id: coin.id,
+    name: coin.name,
+    symbol: coin.symbol,
+    image: imageUrl,
+    current_price: coin.current_price,
+    price_change_percentage_24h: coin.price_change_percentage_24h,
+    market_cap: coin.market_cap,
+    total_volume: coin.total_volume,
   }
 }
 
-// Improve the fetchCoins function to ensure it always returns data
-
+// Updated fetchCoins function with robust error handling and mock data fallback
 export async function fetchCoins(page = 1, perPage = 10): Promise<{ coins: Coin[]; hasMore: boolean }> {
   const cacheKey = `coins-page-${page}-${perPage}`
   const cachedData = apiCache.get<{ coins: Coin[]; hasMore: boolean }>(cacheKey)
 
   if (cachedData) {
-    // Even when using cached data, add a small delay to simulate network
-    await simulateApiDelay()
+    // Update cached data with any new image URLs we might have
+    cachedData.coins = cachedData.coins.map((coin) => {
+      const cachedImage = imageCacheService.getImage(coin.id)
+      if (cachedImage) {
+        return { ...coin, image: cachedImage }
+      }
+      return coin
+    })
+
     return cachedData
   }
 
-  // Always use fallback data in this environment to ensure reliability
-  await simulateApiDelay()
-  const fallbackData = getFallbackCoins(page, perPage)
-  apiCache.set(cacheKey, fallbackData)
+  // If configured to always use mock data, don't attempt real API
+  if (CONFIG.ALWAYS_USE_MOCK_DATA) {
+    console.log("Using mock data as configured")
+    const mockData = await fetchMockCoins(page, perPage)
+
+    // Cache the mock result
+    apiCache.set(cacheKey, mockData, 5 * 60 * 1000) // Cache for 5 minutes
+    return mockData
+  }
+
+  // Try to fetch from real API with retries
+  for (let attempt = 0; attempt <= CONFIG.MAX_API_RETRIES; attempt++) {
+    try {
+      // Create an AbortController with timeout to prevent hanging requests
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT)
+
+      console.log(`Attempting to fetch real data (attempt ${attempt + 1}/${CONFIG.MAX_API_RETRIES + 1})`)
+
+      // Use the CoinGecko API to fetch real data
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${perPage}&page=${page}&sparkline=false`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+          signal: controller.signal,
+        },
+      )
+
+      // Clear the timeout
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} - ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      // Map the API response to our Coin interface and process images
+      const coins = data.map(processCoinData)
+
+      const result = {
+        coins,
+        hasMore: coins.length === perPage, // If we got the full requested amount, there might be more
+      }
+
+      // Cache the result
+      apiCache.set(cacheKey, result, 5 * 60 * 1000) // Cache for 5 minutes
+      return result
+    } catch (error) {
+      console.error(`Error fetching coins (attempt ${attempt + 1}):`, error)
+
+      // If we've exhausted all retries, fall back to mock data
+      if (attempt === CONFIG.MAX_API_RETRIES) {
+        console.log("All API attempts failed, using mock data")
+        const mockData = await fetchMockCoins(page, perPage)
+
+        // Cache the mock result
+        apiCache.set(cacheKey, mockData, 5 * 60 * 1000) // Cache for 5 minutes
+        return mockData
+      }
+
+      // Wait before retrying (exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+    }
+  }
+
+  // This should never be reached due to the return in the catch block above
+  // But TypeScript needs it for type safety
+  const fallbackData = await fetchMockCoins(page, perPage)
   return fallbackData
 }
 
+// Updated fetchCoinDetails function with better error handling and mock data fallback
 export async function fetchCoinDetails(id: string): Promise<Coin | null> {
   const cacheKey = `coin-${id}`
   const cachedData = apiCache.get<Coin>(cacheKey)
 
   if (cachedData) {
-    // Even when using cached data, add a small delay to simulate network
-    await simulateApiDelay()
+    // Check if we have a newer image in the cache
+    const cachedImage = imageCacheService.getImage(id)
+    if (cachedImage) {
+      return { ...cachedData, image: cachedImage }
+    }
     return cachedData
   }
 
-  // Always use fallback data for now
-  await simulateApiDelay()
+  // If configured to always use mock data, don't attempt real API
+  if (CONFIG.ALWAYS_USE_MOCK_DATA) {
+    console.log("Using mock data as configured for coin details")
+    const mockData = await fetchMockCoinDetails(id)
 
-  // Use fallback data or generate realistic fallback if not in our predefined list
-  if (fallbackCoins[id]) {
-    const coin = fallbackCoins[id]
-    apiCache.set(cacheKey, coin)
-    return coin
-  } else {
-    // Generate a realistic fallback coin
-    const fallbackCoin: Coin = {
-      id: id,
-      name: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, " "),
-      symbol: id.substring(0, 3).toUpperCase(),
-      image: "/coin-images/placeholder.png",
-      current_price: Math.random() * 1000,
-      price_change_percentage_24h: Math.random() * 10 * (Math.random() > 0.5 ? 1 : -1),
-      market_cap: Math.random() * 10000000000,
-      total_volume: Math.random() * 1000000000,
+    if (mockData) {
+      // Cache the mock result
+      apiCache.set(cacheKey, mockData, 5 * 60 * 1000) // Cache for 5 minutes
     }
-    apiCache.set(cacheKey, fallbackCoin)
-    return fallbackCoin
-  }
-}
 
+    return mockData
+  }
+
+  // Try to fetch from real API with retries
+  for (let attempt = 0; attempt <= CONFIG.MAX_API_RETRIES; attempt++) {
+    try {
+      // First check if we already have the image cached
+      const cachedImage = imageCacheService.getImage(id)
+
+      // Create an AbortController with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.API_TIMEOUT)
+
+      console.log(`Attempting to fetch real coin details (attempt ${attempt + 1}/${CONFIG.MAX_API_RETRIES + 1})`)
+
+      // Try to get the coin from the markets endpoint
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${id}&order=market_cap_desc&per_page=1&page=1&sparkline=false`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+          signal: controller.signal,
+        },
+      )
+
+      // Clear the timeout
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} - ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        // Use the cached image if available, otherwise use the one from the API
+        const imageUrl = cachedImage || data[0].image
+
+        // If we got a new image from the API, cache it
+        if (!cachedImage && data[0].image) {
+          imageCacheService.setImage(id, data[0].image)
+        }
+
+        const coin = {
+          id: data[0].id,
+          name: data[0].name,
+          symbol: data[0].symbol,
+          image: imageUrl, // Use cached or API image
+          current_price: data[0].current_price,
+          price_change_percentage_24h: data[0].price_change_percentage_24h,
+          market_cap: data[0].market_cap,
+          total_volume: data[0].total_volume,
+        }
+
+        // Cache the result
+        apiCache.set(cacheKey, coin, 5 * 60 * 1000) // Cache for 5 minutes
+        return coin
+      }
+
+      throw new Error("Coin not found in API response")
+    } catch (error) {
+      console.error(`Error fetching coin details for ${id} (attempt ${attempt + 1}):`, error)
+
+      // If we've exhausted all retries, fall back to mock data
+      if (attempt === CONFIG.MAX_API_RETRIES) {
+        console.log("All API attempts failed, using mock data for coin details")
+        const mockData = await fetchMockCoinDetails(id)
+
+        if (mockData) {
+          // Cache the mock result
+          apiCache.set(cacheKey, mockData, 5 * 60 * 1000) // Cache for 5 minutes
+        }
+
+        return mockData
+      }
+
+      // Wait before retrying (exponential backoff)
+      await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt)))
+    }
+  }
+
+  // This should never be reached due to the return in the catch block above
+  // But TypeScript needs it for type safety
+  return fetchMockCoinDetails(id)
+}

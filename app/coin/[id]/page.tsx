@@ -336,62 +336,47 @@ export default function CoinPage() {
       setUsingFallbackData(false)
       setApiError(false)
 
-      // First check if we have fallback data for this coin
-      if (fallbackCoins[coinId]) {
-        setCoin(fallbackCoins[coinId])
-        setUsingFallbackData(true)
-
-        // Fetch chart data after successfully getting coin data
-        fetchChartData()
-        return
-      }
-
-      // Generate generic data for unknown coins
-      const genericCoin = generateGenericCoinData(coinId)
-      setCoin(genericCoin)
-      setUsingFallbackData(true)
-
-      // Try API call in the background
       try {
-        const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}`, {
-          cache: "no-cache",
-          headers: {
-            Accept: "application/json",
-          },
-        })
+        // Try to fetch from the API first
+        const coin = await fetchCoinDetails(coinId)
 
-        if (response.ok) {
-          const data = await response.json()
-
-          setCoin({
-            id: data.id,
-            name: data.name,
-            symbol: data.symbol,
-            image: data.image.large,
-            current_price: data.market_data.current_price.usd,
-            price_change_percentage_24h: data.market_data.price_change_percentage_24h,
-            market_cap: data.market_data.market_cap.usd,
-            total_volume: data.market_data.total_volume.usd,
-            description: data.description,
-            market_cap_rank: data.market_cap_rank,
-            high_24h: data.market_data.high_24h.usd,
-            low_24h: data.market_data.low_24h.usd,
-            price_change_24h: data.market_data.price_change_24h,
-            ath: data.market_data.ath.usd,
-            ath_date: data.market_data.ath_date.usd,
-            atl: data.market_data.atl.usd,
-            atl_date: data.market_data.atl_date.usd,
-          })
-
+        if (coin) {
+          setCoin(coin)
           setUsingFallbackData(false)
-        }
-      } catch (error) {
-        console.error("Background API fetch failed:", error)
-        // We already have fallback data, so no need to handle this error
-      }
 
-      // Fetch chart data after setting coin data
-      fetchChartData()
+          // Fetch chart data after successfully getting coin data
+          fetchChartData()
+          return
+        }
+
+        // If no coin data returned, check fallback data
+        if (fallbackCoins[coinId]) {
+          setCoin(fallbackCoins[coinId])
+          setUsingFallbackData(true)
+          fetchChartData()
+          return
+        }
+
+        // Generate generic data for unknown coins
+        const genericCoin = generateGenericCoinData(coinId)
+        setCoin(genericCoin)
+        setUsingFallbackData(true)
+        fetchChartData()
+      } catch (error) {
+        console.error("Error in API fetch:", error)
+        setApiError(true)
+
+        // Use fallback data if available, or generate generic data if not
+        if (fallbackCoins[coinId]) {
+          setCoin(fallbackCoins[coinId])
+        } else {
+          // Generate generic data for unknown coins
+          setCoin(generateGenericCoinData(coinId))
+        }
+
+        setUsingFallbackData(true)
+        fetchChartData()
+      }
     } catch (error) {
       console.error("Error in fetchCoinData:", error)
       setApiError(true)
@@ -405,8 +390,6 @@ export default function CoinPage() {
       }
 
       setUsingFallbackData(true)
-
-      // Still fetch chart data even with fallback coin data
       fetchChartData()
     } finally {
       setLoading(false)
@@ -521,7 +504,17 @@ export default function CoinPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div className="flex items-center space-x-4">
               <div className="relative h-16 w-16">
-                <Image src={coin.image || "/placeholder.svg"} alt={coin.name} fill className="rounded-full" />
+                <Image
+                  src={coin.image || "/coin-images/placeholder.png"}
+                  alt={coin.name || "Cryptocurrency"}
+                  fill
+                  className="rounded-full"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    const target = e.target as HTMLImageElement
+                    target.src = "/coin-images/placeholder.png"
+                  }}
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold">{coin.name}</h1>
@@ -723,3 +716,43 @@ export default function CoinPage() {
   )
 }
 
+async function fetchCoinDetails(coinId: string): Promise<CoinData | null> {
+  try {
+    const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}`, {
+      cache: "no-cache",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`API Error: ${response.status} - ${response.statusText}`)
+      return null
+    }
+
+    const data = await response.json()
+
+    return {
+      id: data.id,
+      name: data.name,
+      symbol: data.symbol,
+      image: data.image.large,
+      current_price: data.market_data.current_price.usd,
+      price_change_percentage_24h: data.market_data.price_change_percentage_24h,
+      market_cap: data.market_data.market_cap.usd,
+      total_volume: data.market_data.total_volume.usd,
+      description: data.description,
+      market_cap_rank: data.market_cap_rank,
+      high_24h: data.market_data.high_24h.usd,
+      low_24h: data.market_data.low_24h.usd,
+      price_change_24h: data.market_data.price_change_24h,
+      ath: data.market_data.ath.usd,
+      ath_date: data.market_data.ath_date.usd,
+      atl: data.market_data.atl.usd,
+      atl_date: data.market_data.atl_date.usd,
+    }
+  } catch (error) {
+    console.error("Error fetching coin details:", error)
+    return null
+  }
+}

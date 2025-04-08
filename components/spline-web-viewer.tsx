@@ -139,4 +139,3 @@ export function SplineWebViewer({ url, className = "", fallbackContent }: Spline
     </div>
   )
 }
-

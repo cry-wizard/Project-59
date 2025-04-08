@@ -82,4 +82,3 @@ export function LineChart({ data }: LineChartProps) {
 
   return <Line options={options} data={data} />
 }
-

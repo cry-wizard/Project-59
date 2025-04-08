@@ -53,4 +53,3 @@ export function Fallback3D({ className = "" }: Fallback3DProps) {
     </div>
   )
 }
-

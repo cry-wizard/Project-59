@@ -64,7 +64,8 @@
     "react-chartjs-2": "latest",
     "framer-motion": "latest",
     "three": "latest",
-    "@splinetool/react-spline": "latest"
+    "@splinetool/react-spline": "latest",
+    "axios": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

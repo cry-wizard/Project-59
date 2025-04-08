@@ -13,6 +13,7 @@ import { LineChart } from "@/components/line-chart"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { motion } from "framer-motion"
 import { Loader2 } from "lucide-react"
+import { imageCacheService } from "@/lib/image-cache"
 
 interface Coin {
   id: string
@@ -456,6 +457,10 @@ export default function Compare() {
   const [usingFallbackCoins, setUsingFallbackCoins] = useState(false)
   const [usingFallbackList, setUsingFallbackList] = useState(false)
 
+  // Image error states
+  const [coin1ImageError, setCoin1ImageError] = useState(false)
+  const [coin2ImageError, setCoin2ImageError] = useState(false)
+
   // Fetch all coins for the dropdown
   const fetchAllCoins = useCallback(async () => {
     try {
@@ -468,6 +473,13 @@ export default function Compare() {
       try {
         const response = await fetch(
           "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1",
+          {
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000), // Add timeout to prevent long-hanging requests
+          },
         )
 
         if (response.status === 429) {
@@ -483,12 +495,23 @@ export default function Compare() {
         const data = await response.json()
 
         // Map the API response to our Coin interface
-        const coins: Coin[] = data.map((coin: any) => ({
-          id: coin.id,
-          name: coin.name,
-          symbol: coin.symbol.toUpperCase(),
-          image: coinImages[coin.id] || coin.image,
-        }))
+        const coins: Coin[] = data.map((coin: any) => {
+          // Check if we already have this image cached
+          let imageUrl = imageCacheService.getImage(coin.id)
+
+          // If not cached, use the API image and cache it
+          if (!imageUrl && coin.image) {
+            imageUrl = coin.image
+            imageCacheService.setImage(coin.id, imageUrl)
+          }
+
+          return {
+            id: coin.id,
+            name: coin.name,
+            symbol: coin.symbol.toUpperCase(),
+            image: imageUrl || coinImages[coin.id] || "/coin-images/placeholder.png",
+          }
+        })
 
         setAllCoins(coins)
         setApiStatus("success")
@@ -518,8 +541,6 @@ export default function Compare() {
     }
   }, [])
 
-  // Improve the compare page to ensure data is always loaded
-
   // Update the fetchCoinData function to ensure data is always available
   const fetchCoinData = useCallback(async () => {
     if (!coin1 || !coin2) return
@@ -544,58 +565,99 @@ export default function Compare() {
         // Add a small delay to simulate network request
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        const [response1, response2] = await Promise.all([
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin1}`),
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin2}`),
+        // Use Promise.allSettled instead of Promise.all to handle partial failures
+        const results = await Promise.allSettled([
+          fetch(
+            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin1}&order=market_cap_desc&per_page=1&page=1&sparkline=false`,
+            { signal: AbortSignal.timeout(5000) }, // Add timeout to prevent long-hanging requests
+          ),
+          fetch(
+            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin2}&order=market_cap_desc&per_page=1&page=1&sparkline=false`,
+            { signal: AbortSignal.timeout(5000) }, // Add timeout to prevent long-hanging requests
+          ),
         ])
 
-        if (response1.ok && response2.ok) {
-          const [apiData1, apiData2] = await Promise.all([response1.json(), response2.json()])
+        // Process the first coin result
+        if (results[0].status === "fulfilled" && results[0].value.ok) {
+          const apiData1 = await results[0].value.json()
+          if (apiData1.length > 0) {
+            // Check for cached images first
+            const coin1ImageUrl = imageCacheService.getImage(coin1) || apiData1[0].image
 
-          // Set coin data from API
-          setCoin1Data({
-            id: apiData1.id,
-            name: apiData1.name,
-            symbol: apiData1.symbol,
-            image: coinImages[apiData1.id] || apiData1.image.large,
-            current_price: apiData1.market_data.current_price.usd,
-            price_change_percentage_24h: apiData1.market_data.price_change_percentage_24h,
-            market_cap: apiData1.market_data.market_cap.usd,
-            total_volume: apiData1.market_data.total_volume.usd,
-            high_24h: apiData1.market_data.high_24h.usd,
-            low_24h: apiData1.market_data.low_24h.usd,
-            ath: apiData1.market_data.ath.usd,
-            atl: apiData1.market_data.atl.usd,
-            circulating_supply: apiData1.market_data.circulating_supply,
-            total_supply: apiData1.market_data.total_supply,
-            max_supply: apiData1.market_data.max_supply,
-            description: apiData1.description,
-          })
+            // Cache the images if they're from the API
+            if (!imageCacheService.getImage(coin1) && apiData1[0].image) {
+              imageCacheService.setImage(coin1, apiData1[0].image)
+            }
 
-          setCoin2Data({
-            id: apiData2.id,
-            name: apiData2.name,
-            symbol: apiData2.symbol,
-            image: coinImages[apiData2.id] || apiData2.image.large,
-            current_price: apiData2.market_data.current_price.usd,
-            price_change_percentage_24h: apiData2.market_data.price_change_percentage_24h,
-            market_cap: apiData2.market_data.market_cap.usd,
-            total_volume: apiData2.market_data.total_volume.usd,
-            high_24h: apiData2.market_data.high_24h.usd,
-            low_24h: apiData2.market_data.low_24h.usd,
-            ath: apiData2.market_data.ath.usd,
-            atl: apiData2.market_data.atl.usd,
-            circulating_supply: apiData2.market_data.circulating_supply,
-            total_supply: apiData2.market_data.total_supply,
-            max_supply: apiData2.market_data.max_supply,
-            description: apiData2.description,
-          })
+            // Set coin data from API
+            setCoin1Data({
+              id: apiData1[0].id,
+              name: apiData1[0].name,
+              symbol: apiData1[0].symbol,
+              image: coin1ImageUrl,
+              current_price: apiData1[0].current_price,
+              price_change_percentage_24h: apiData1[0].price_change_percentage_24h,
+              market_cap: apiData1[0].market_cap,
+              total_volume: apiData1[0].total_volume,
+              high_24h: apiData1[0].high_24h,
+              low_24h: apiData1[0].low_24h,
+              ath: apiData1[0].ath,
+              atl: apiData1[0].atl,
+              circulating_supply: apiData1[0].circulating_supply,
+              total_supply: apiData1[0].total_supply,
+              max_supply: apiData1[0].max_supply,
+              description: { en: "Description not available" },
+            })
+          }
+        }
 
+        // Process the second coin result
+        if (results[1].status === "fulfilled" && results[1].value.ok) {
+          const apiData2 = await results[1].value.json()
+          if (apiData2.length > 0) {
+            // Check for cached images first
+            const coin2ImageUrl = imageCacheService.getImage(coin2) || apiData2[0].image
+
+            // Cache the images if they're from the API
+            if (!imageCacheService.getImage(coin2) && apiData2[0].image) {
+              imageCacheService.setImage(coin2, apiData2[0].image)
+            }
+
+            // Set coin data from API
+            setCoin2Data({
+              id: apiData2[0].id,
+              name: apiData2[0].name,
+              symbol: apiData2[0].symbol,
+              image: coin2ImageUrl,
+              current_price: apiData2[0].current_price,
+              price_change_percentage_24h: apiData2[0].price_change_percentage_24h,
+              market_cap: apiData2[0].market_cap,
+              total_volume: apiData2[0].total_volume,
+              high_24h: apiData2[0].high_24h,
+              low_24h: apiData2[0].low_24h,
+              ath: apiData2[0].ath,
+              atl: apiData2[0].atl,
+              circulating_supply: apiData2[0].circulating_supply,
+              total_supply: apiData2[0].total_supply,
+              max_supply: apiData2[0].max_supply,
+              description: { en: "Description not available" },
+            })
+          }
+        }
+
+        // If both API calls were successful, we're not using fallback data
+        if (
+          results[0].status === "fulfilled" &&
+          results[1].status === "fulfilled" &&
+          results[0].value.ok &&
+          results[1].value.ok
+        ) {
           setUsingFallbackCoins(false)
         }
       } catch (error) {
         console.error("Error fetching real coin data:", error)
         // We already have fallback data, so no need to handle this error
+        // Just log it and continue using the fallback data
       }
     } catch (error) {
       console.error("Error in fetchCoinData:", error)
@@ -712,6 +774,12 @@ export default function Compare() {
     fetchCoinData()
   }
 
+  // Handle successful image load
+  const handleImageLoad = (coinId: string, imageUrl: string) => {
+    // Store the successful image URL in our global cache
+    imageCacheService.setImage(coinId, imageUrl)
+  }
+
   return (
     <div className="container py-24">
       <div className="flex flex-col items-center mb-8">
@@ -782,7 +850,17 @@ export default function Compare() {
                     <SelectItem key={coin.id} value={coin.id}>
                       <div className="flex items-center">
                         <div className="relative h-5 w-5 mr-2">
-                          <Image src={coin.image || "/placeholder.svg"} alt={coin.name} fill className="rounded-full" />
+                          <Image
+                            src={imageCacheService.getImage(coin.id) || coin.image || "/coin-images/placeholder.png"}
+                            alt={coin.name}
+                            fill
+                            className="rounded-full"
+                            onLoad={() => handleImageLoad(coin.id, coin.image)}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/coin-images/placeholder.png"
+                            }}
+                          />
                         </div>
                         {coin.name}
                       </div>
@@ -805,7 +883,17 @@ export default function Compare() {
                     <SelectItem key={coin.id} value={coin.id}>
                       <div className="flex items-center">
                         <div className="relative h-5 w-5 mr-2">
-                          <Image src={coin.image || "/placeholder.svg"} alt={coin.name} fill className="rounded-full" />
+                          <Image
+                            src={imageCacheService.getImage(coin.id) || coin.image || "/coin-images/placeholder.png"}
+                            alt={coin.name}
+                            fill
+                            className="rounded-full"
+                            onLoad={() => handleImageLoad(coin.id, coin.image)}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.src = "/coin-images/placeholder.png"
+                            }}
+                          />
                         </div>
                         {coin.name}
                       </div>
@@ -909,10 +997,20 @@ export default function Compare() {
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="relative h-12 w-12 coin-icon">
                         <Image
-                          src={coin1Data.image || "/placeholder.svg"}
+                          src={
+                            !coin1ImageError
+                              ? imageCacheService.getImage(coin1Data.id) ||
+                                coin1Data.image ||
+                                "/coin-images/placeholder.png"
+                              : "/coin-images/placeholder.png"
+                          }
                           alt={coin1Data.name}
                           fill
                           className="rounded-full"
+                          onLoad={() => handleImageLoad(coin1Data.id, coin1Data.image)}
+                          onError={() => {
+                            setCoin1ImageError(true)
+                          }}
                         />
                       </div>
                       <div>
@@ -970,10 +1068,20 @@ export default function Compare() {
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="relative h-12 w-12 coin-icon">
                         <Image
-                          src={coin2Data.image || "/placeholder.svg"}
+                          src={
+                            !coin2ImageError
+                              ? imageCacheService.getImage(coin2Data.id) ||
+                                coin2Data.image ||
+                                "/coin-images/placeholder.png"
+                              : "/coin-images/placeholder.png"
+                          }
                           alt={coin2Data.name}
                           fill
                           className="rounded-full"
+                          onLoad={() => handleImageLoad(coin2Data.id, coin2Data.image)}
+                          onError={() => {
+                            setCoin2ImageError(true)
+                          }}
                         />
                       </div>
                       <div>
@@ -1117,4 +1225,3 @@ export default function Compare() {
     </div>
   )
 }
-
